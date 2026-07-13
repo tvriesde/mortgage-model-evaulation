@@ -13,9 +13,12 @@ try {
     npm ci
     Assert-LastExitCode "frontend npm ci"
 
-    $installArgs = if ($env:CI) { @('install', '--with-deps', 'chromium') } else { @('install', 'chromium') }
-    npx playwright @installArgs
-    Assert-LastExitCode "playwright browser install"
+    # System deps are already present on ubuntu-latest runners, and the browser binary
+    # is cached across CI runs, so only download it on a cache miss (drop --with-deps).
+    if (-not $env:CI -or $env:PLAYWRIGHT_CACHE_HIT -ne 'true') {
+        npx playwright install chromium
+        Assert-LastExitCode "playwright browser install"
+    }
 
     npx playwright test
     Assert-LastExitCode "playwright tests"
