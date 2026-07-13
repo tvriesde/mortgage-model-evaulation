@@ -12,6 +12,11 @@ on:
         type: choice
         options: [dev, prd]
         default: dev
+      model:
+        description: Model deployment to evaluate (must be deployed in the target env)
+        type: choice
+        options: [gpt-4.1, gpt-4.1-mini, gpt-5]
+        default: gpt-4.1
 
 concurrency:
   group: cicd-${{ github.event.inputs.environment || 'dev' }}
@@ -23,6 +28,7 @@ permissions:
 
 env:
   TARGET_ENV: ${{ github.event.inputs.environment || 'dev' }}
+  EVAL_DEPLOYMENT: ${{ github.event.inputs.model }}
 
 jobs:
   unit-tests:
@@ -91,9 +97,26 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Verify selected model is deployed to target env
+        if: env.EVAL_DEPLOYMENT != ''
+        shell: pwsh
+        run: |
+          . ./scripts/common.ps1
+          $outputs = Get-InfraOutputs $env:TARGET_ENV
+          $available = @($outputs['openAiDeployments'])
+          if ($available -notcontains $env:EVAL_DEPLOYMENT) {
+            Write-Host "::error::Model '$($env:EVAL_DEPLOYMENT)' is not deployed to '$($env:TARGET_ENV)'. Available: $($available -join ', '). Add it to infra/main.$($env:TARGET_ENV).bicepparam and redeploy before evaluating it."
+            exit 1
+          }
+          Write-Host "Model '$($env:EVAL_DEPLOYMENT)' is deployed to '$($env:TARGET_ENV)'."
       - name: Run agentic evaluations (blocks deployment on regression)
         shell: pwsh
-        run: ./scripts/run-evals.ps1 -Env $env:TARGET_ENV -Threshold 0.9 -MaxSevere 0
+        run: >
+          ./scripts/run-evals.ps1
+          -Env $env:TARGET_ENV
+          -Threshold 0.9
+          -MaxSevere 0
+          -Deployment $env:EVAL_DEPLOYMENT
       - uses: actions/upload-artifact@v4
         if: always()
         with:

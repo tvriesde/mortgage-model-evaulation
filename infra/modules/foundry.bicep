@@ -10,8 +10,11 @@ param customSubDomainName string
 @description('Tags applied to all resources.')
 param tags object
 
-@description('Model deployment settings.')
-param model modelConfig
+@description('Model deployments to create on the account (one per model to test).')
+param models modelConfig[]
+
+@description('Deployment name the application uses by default (must match one of models[].deploymentName).')
+param primaryDeploymentName string
 
 @export()
 type modelConfig = {
@@ -59,26 +62,32 @@ resource project 'Microsoft.CognitiveServices/accounts/projects@2025-06-01' = {
   }
 }
 
-resource chatDeployment 'Microsoft.CognitiveServices/accounts/deployments@2025-06-01' = {
-  parent: account
-  name: model.deploymentName
-  sku: {
-    name: model.skuName
-    capacity: model.capacity
-  }
-  properties: {
-    model: {
-      format: 'OpenAI'
-      name: model.name
-      version: model.version
+// Deployments on a Cognitive Services account cannot be created concurrently,
+// so serialize them with @batchSize(1) to avoid conflict errors.
+@batchSize(1)
+resource chatDeployments 'Microsoft.CognitiveServices/accounts/deployments@2025-06-01' = [
+  for model in models: {
+    parent: account
+    name: model.deploymentName
+    sku: {
+      name: model.skuName
+      capacity: model.capacity
     }
-    versionUpgradeOption: 'NoAutoUpgrade'
+    properties: {
+      model: {
+        format: 'OpenAI'
+        name: model.name
+        version: model.version
+      }
+      versionUpgradeOption: 'NoAutoUpgrade'
+    }
   }
-}
+]
 
 output accountId string = account.id
 output accountName string = account.name
 output projectName string = project.name
 output openAiEndpoint string = 'https://${customSubDomainName}.openai.azure.com/'
 output foundryEndpoint string = account.properties.endpoint
-output deploymentName string = chatDeployment.name
+output deploymentName string = primaryDeploymentName
+output deploymentNames string[] = [for model in models: model.deploymentName]

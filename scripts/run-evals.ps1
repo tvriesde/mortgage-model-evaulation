@@ -8,6 +8,10 @@
     Minimum verdict accuracy required to pass (0-1).
 .PARAMETER MaxSevere
     Maximum allowed approved<->declined mismatches.
+.PARAMETER Deployment
+    Optional model deployment name to evaluate. Defaults to the app's primary
+    deployment from the infra outputs. Use this to A/B test other deployed models,
+    e.g. -Deployment gpt-4.1-mini or -Deployment gpt-5.
 .PARAMETER Mock
     Use the deterministic reference calculator instead of the deployed model.
 .PARAMETER Groundedness
@@ -19,6 +23,7 @@ param(
     [string]$Env = 'dev',
     [double]$Threshold = 0.9,
     [int]$MaxSevere = 0,
+    [string]$Deployment = '',
     [switch]$Mock,
     [switch]$Groundedness
 )
@@ -35,9 +40,17 @@ else {
     Write-Step "Reading deployed model configuration ($Env)"
     $outputs = Get-InfraOutputs $Env
     $env:AZURE_OPENAI_ENDPOINT = $outputs['openAiEndpoint']
-    $env:AZURE_OPENAI_DEPLOYMENT = $outputs['openAiDeployment']
+    $env:AZURE_OPENAI_DEPLOYMENT = if ($Deployment) { $Deployment } else { $outputs['openAiDeployment'] }
     $env:AZURE_OPENAI_API_VERSION = $outputs['openAiApiVersion']
     Remove-Item Env:EVAL_MOCK -ErrorAction SilentlyContinue
+
+    if ($Deployment) {
+        $available = $outputs['openAiDeployments']
+        if ($available -and ($available -notcontains $Deployment)) {
+            throw "Deployment '$Deployment' is not one of the deployed models: $($available -join ', ')"
+        }
+    }
+
     Write-Host "  Endpoint:   $($env:AZURE_OPENAI_ENDPOINT)"
     Write-Host "  Deployment: $($env:AZURE_OPENAI_DEPLOYMENT)"
 }

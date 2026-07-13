@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from functools import lru_cache
 
 from reference_calculator import compute_mortgage_decision
@@ -77,6 +78,11 @@ def _mock(row: dict) -> dict:
     return {"verdict": decision.verdict, "reason": decision.reason, "response": decision.reason}
 
 
+def _is_reasoning_model(deployment: str) -> bool:
+    # Reasoning models (gpt-5.x, o-series) reject temperature != 1, so omit it.
+    return re.match(r"^(gpt-5|o\d)", deployment, re.IGNORECASE) is not None
+
+
 def evaluate_request(
     incomeSource: str,
     grossAnnualIncome: float,
@@ -107,15 +113,18 @@ def evaluate_request(
     deployment = os.environ["AZURE_OPENAI_DEPLOYMENT"]
     user_message = json.dumps(row)
 
-    completion = _client().chat.completions.create(
-        model=deployment,
-        temperature=0,
-        response_format={"type": "json_object"},
-        messages=[
+    kwargs: dict = {
+        "model": deployment,
+        "response_format": {"type": "json_object"},
+        "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_message},
         ],
-    )
+    }
+    if not _is_reasoning_model(deployment):
+        kwargs["temperature"] = 0
+
+    completion = _client().chat.completions.create(**kwargs)
     content = completion.choices[0].message.content or "{}"
     parsed = json.loads(content)
     reason = parsed.get("reason", "")

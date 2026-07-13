@@ -15,14 +15,19 @@ param location string = resourceGroup().location
 @description('Region for the Static Web App (must be a SWA-supported region).')
 param staticWebAppLocation string = 'westeurope'
 
-@description('Chat model deployment configuration (swap the version to test a new model).')
-param model modelConfig = {
-  deploymentName: 'gpt-4.1'
-  name: 'gpt-4.1'
-  version: '2025-04-14'
-  skuName: 'GlobalStandard'
-  capacity: 20
-}
+@description('Chat model deployments to create (add entries to test more models).')
+param models modelConfig[] = [
+  {
+    deploymentName: 'gpt-4.1'
+    name: 'gpt-4.1'
+    version: '2025-04-14'
+    skuName: 'GlobalStandard'
+    capacity: 20
+  }
+]
+
+@description('Deployment the application uses by default (must match one of models[].deploymentName).')
+param primaryDeploymentName string = 'gpt-4.1'
 
 @description('Azure OpenAI API version used by the app and evaluations.')
 param openAiApiVersion string = '2024-10-21'
@@ -58,7 +63,8 @@ module foundry 'modules/foundry.bicep' = {
     location: location
     namePrefix: namePrefix
     customSubDomainName: customSubDomainName
-    model: model
+    models: models
+    primaryDeploymentName: primaryDeploymentName
     tags: tags
   }
 }
@@ -106,6 +112,7 @@ output foundryAccountName string = foundry.outputs.accountName
 output foundryProjectName string = foundry.outputs.projectName
 output openAiEndpoint string = foundry.outputs.openAiEndpoint
 output openAiDeployment string = foundry.outputs.deploymentName
+output openAiDeployments string[] = foundry.outputs.deploymentNames
 output openAiApiVersion string = openAiApiVersion
 output functionAppName string = functions.outputs.functionAppName
 output functionAppUrl string = functions.outputs.functionAppUrl

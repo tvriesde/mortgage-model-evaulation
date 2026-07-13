@@ -16,6 +16,12 @@ const VALID_VERDICTS: Verdict[] = ['approved', 'needs_review', 'declined'];
 
 const COGNITIVE_SERVICES_SCOPE = 'https://cognitiveservices.azure.com/.default';
 
+// Reasoning models (gpt-5.x, o-series) reject temperature != 1, so we omit the
+// temperature parameter for them and let the service use its default.
+function isReasoningModel(deployment: string): boolean {
+  return /^(gpt-5|o\d)/i.test(deployment);
+}
+
 let cachedClient: AzureOpenAI | undefined;
 
 function getClient(): AzureOpenAI {
@@ -85,7 +91,7 @@ export async function evaluateWithAgent(request: MortgageRequest): Promise<Agent
 
   const completion = await client.chat.completions.create({
     model: deployment,
-    temperature: 0,
+    ...(isReasoningModel(deployment) ? {} : { temperature: 0 }),
     response_format: { type: 'json_object' },
     messages: [
       { role: 'system', content: SYSTEM_PROMPT },
