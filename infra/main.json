@@ -1,0 +1,1001 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "languageVersion": "2.0",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.44.1.10279",
+      "templateHash": "10080396950601237077"
+    }
+  },
+  "definitions": {
+    "modelConfig": {
+      "type": "object",
+      "properties": {
+        "deploymentName": {
+          "type": "string",
+          "metadata": {
+            "description": "Deployment name used by the application (AZURE_OPENAI_DEPLOYMENT)."
+          }
+        },
+        "name": {
+          "type": "string",
+          "metadata": {
+            "description": "Model name, e.g. gpt-4o."
+          }
+        },
+        "version": {
+          "type": "string",
+          "metadata": {
+            "description": "Model version, e.g. 2024-08-06."
+          }
+        },
+        "skuName": {
+          "type": "string",
+          "metadata": {
+            "description": "Deployment SKU name, e.g. GlobalStandard or Standard."
+          }
+        },
+        "capacity": {
+          "type": "int",
+          "metadata": {
+            "description": "Deployment capacity in thousands of tokens per minute."
+          }
+        }
+      },
+      "metadata": {
+        "__bicep_imported_from!": {
+          "sourceTemplate": "modules/foundry.bicep"
+        }
+      }
+    }
+  },
+  "parameters": {
+    "environmentName": {
+      "type": "string",
+      "allowedValues": [
+        "dev",
+        "prd"
+      ],
+      "metadata": {
+        "description": "Environment short name (dev or prd)."
+      }
+    },
+    "baseName": {
+      "type": "string",
+      "defaultValue": "mortgage-agent",
+      "metadata": {
+        "description": "Base name prefix for all resources, e.g. mortgage-agent."
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Azure region for most resources."
+      }
+    },
+    "staticWebAppLocation": {
+      "type": "string",
+      "defaultValue": "westeurope",
+      "metadata": {
+        "description": "Region for the Static Web App (must be a SWA-supported region)."
+      }
+    },
+    "model": {
+      "$ref": "#/definitions/modelConfig",
+      "defaultValue": {
+        "deploymentName": "gpt-4.1",
+        "name": "gpt-4.1",
+        "version": "2025-04-14",
+        "skuName": "GlobalStandard",
+        "capacity": 20
+      },
+      "metadata": {
+        "description": "Chat model deployment configuration (swap the version to test a new model)."
+      }
+    },
+    "openAiApiVersion": {
+      "type": "string",
+      "defaultValue": "2024-10-21",
+      "metadata": {
+        "description": "Azure OpenAI API version used by the app and evaluations."
+      }
+    },
+    "evaluatorPrincipalId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Optional principal (CI service principal or your user objectId) granted OpenAI User on the Foundry account so evaluations can call the model. Leave empty to skip."
+      }
+    },
+    "evaluatorPrincipalType": {
+      "type": "string",
+      "defaultValue": "ServicePrincipal",
+      "allowedValues": [
+        "User",
+        "ServicePrincipal",
+        "Group"
+      ],
+      "metadata": {
+        "description": "Principal type of evaluatorPrincipalId."
+      }
+    }
+  },
+  "variables": {
+    "namePrefix": "[format('{0}-{1}', parameters('baseName'), parameters('environmentName'))]",
+    "suffix": "[uniqueString(resourceGroup().id)]",
+    "storageAccountName": "[take(toLower(replace(format('{0}{1}{2}', parameters('baseName'), parameters('environmentName'), variables('suffix')), '-', '')), 24)]",
+    "customSubDomainName": "[toLower(format('{0}-{1}', variables('namePrefix'), variables('suffix')))]",
+    "tags": {
+      "application": "mortgage-agent",
+      "environment": "[parameters('environmentName')]",
+      "managedBy": "bicep"
+    },
+    "openAiUserRoleId": "5e0bd9bd-7b93-4f28-af87-19fc36ad61bd"
+  },
+  "resources": {
+    "foundryAccount": {
+      "existing": true,
+      "type": "Microsoft.CognitiveServices/accounts",
+      "apiVersion": "2025-06-01",
+      "name": "[format('{0}-aif', variables('namePrefix'))]"
+    },
+    "evaluatorOpenAiRole": {
+      "condition": "[not(empty(parameters('evaluatorPrincipalId')))]",
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.CognitiveServices/accounts', format('{0}-aif', variables('namePrefix')))]",
+      "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', format('{0}-aif', variables('namePrefix'))), parameters('evaluatorPrincipalId'), variables('openAiUserRoleId'))]",
+      "properties": {
+        "principalId": "[parameters('evaluatorPrincipalId')]",
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('openAiUserRoleId'))]",
+        "principalType": "[parameters('evaluatorPrincipalType')]"
+      },
+      "dependsOn": [
+        "foundry"
+      ]
+    },
+    "monitoring": {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "[format('monitoring-{0}', uniqueString('monitoring', deployment().name))]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "namePrefix": {
+            "value": "[variables('namePrefix')]"
+          },
+          "tags": {
+            "value": "[variables('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.44.1.10279",
+              "templateHash": "6597122969942683725"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure region for the monitoring resources."
+              }
+            },
+            "namePrefix": {
+              "type": "string",
+              "metadata": {
+                "description": "Base name used to derive resource names."
+              }
+            },
+            "tags": {
+              "type": "object",
+              "metadata": {
+                "description": "Tags applied to all resources."
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.OperationalInsights/workspaces",
+              "apiVersion": "2023-09-01",
+              "name": "[format('{0}-log', parameters('namePrefix'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "sku": {
+                  "name": "PerGB2018"
+                },
+                "retentionInDays": 30
+              }
+            },
+            {
+              "type": "Microsoft.Insights/components",
+              "apiVersion": "2020-02-02",
+              "name": "[format('{0}-ai', parameters('namePrefix'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "kind": "web",
+              "properties": {
+                "Application_Type": "web",
+                "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', format('{0}-log', parameters('namePrefix')))]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', format('{0}-log', parameters('namePrefix')))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "appInsightsConnectionString": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Insights/components', format('{0}-ai', parameters('namePrefix'))), '2020-02-02').ConnectionString]"
+            },
+            "logAnalyticsId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.OperationalInsights/workspaces', format('{0}-log', parameters('namePrefix')))]"
+            }
+          }
+        }
+      }
+    },
+    "foundry": {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "[format('foundry-{0}', uniqueString('foundry', deployment().name))]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "namePrefix": {
+            "value": "[variables('namePrefix')]"
+          },
+          "customSubDomainName": {
+            "value": "[variables('customSubDomainName')]"
+          },
+          "model": {
+            "value": "[parameters('model')]"
+          },
+          "tags": {
+            "value": "[variables('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "languageVersion": "2.0",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.44.1.10279",
+              "templateHash": "12326183573630642621"
+            }
+          },
+          "definitions": {
+            "modelConfig": {
+              "type": "object",
+              "properties": {
+                "deploymentName": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Deployment name used by the application (AZURE_OPENAI_DEPLOYMENT)."
+                  }
+                },
+                "name": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Model name, e.g. gpt-4o."
+                  }
+                },
+                "version": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Model version, e.g. 2024-08-06."
+                  }
+                },
+                "skuName": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Deployment SKU name, e.g. GlobalStandard or Standard."
+                  }
+                },
+                "capacity": {
+                  "type": "int",
+                  "metadata": {
+                    "description": "Deployment capacity in thousands of tokens per minute."
+                  }
+                }
+              },
+              "metadata": {
+                "__bicep_export!": true
+              }
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure region for the Foundry account."
+              }
+            },
+            "namePrefix": {
+              "type": "string",
+              "metadata": {
+                "description": "Base name used to derive resource names."
+              }
+            },
+            "customSubDomainName": {
+              "type": "string",
+              "metadata": {
+                "description": "Globally-unique custom subdomain for token-based (Entra ID) access."
+              }
+            },
+            "tags": {
+              "type": "object",
+              "metadata": {
+                "description": "Tags applied to all resources."
+              }
+            },
+            "model": {
+              "$ref": "#/definitions/modelConfig",
+              "metadata": {
+                "description": "Model deployment settings."
+              }
+            }
+          },
+          "resources": {
+            "account": {
+              "type": "Microsoft.CognitiveServices/accounts",
+              "apiVersion": "2025-06-01",
+              "name": "[format('{0}-aif', parameters('namePrefix'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "kind": "AIServices",
+              "sku": {
+                "name": "S0"
+              },
+              "identity": {
+                "type": "SystemAssigned"
+              },
+              "properties": {
+                "allowProjectManagement": true,
+                "customSubDomainName": "[parameters('customSubDomainName')]",
+                "publicNetworkAccess": "Enabled",
+                "disableLocalAuth": false
+              }
+            },
+            "project": {
+              "type": "Microsoft.CognitiveServices/accounts/projects",
+              "apiVersion": "2025-06-01",
+              "name": "[format('{0}/{1}', format('{0}-aif', parameters('namePrefix')), format('{0}-proj', parameters('namePrefix')))]",
+              "location": "[parameters('location')]",
+              "identity": {
+                "type": "SystemAssigned"
+              },
+              "properties": {
+                "displayName": "Mortgage agent project",
+                "description": "Preliminary mortgage assessment agent and evaluations"
+              },
+              "dependsOn": [
+                "account"
+              ]
+            },
+            "chatDeployment": {
+              "type": "Microsoft.CognitiveServices/accounts/deployments",
+              "apiVersion": "2025-06-01",
+              "name": "[format('{0}/{1}', format('{0}-aif', parameters('namePrefix')), parameters('model').deploymentName)]",
+              "sku": {
+                "name": "[parameters('model').skuName]",
+                "capacity": "[parameters('model').capacity]"
+              },
+              "properties": {
+                "model": {
+                  "format": "OpenAI",
+                  "name": "[parameters('model').name]",
+                  "version": "[parameters('model').version]"
+                },
+                "versionUpgradeOption": "NoAutoUpgrade"
+              },
+              "dependsOn": [
+                "account"
+              ]
+            }
+          },
+          "outputs": {
+            "accountId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.CognitiveServices/accounts', format('{0}-aif', parameters('namePrefix')))]"
+            },
+            "accountName": {
+              "type": "string",
+              "value": "[format('{0}-aif', parameters('namePrefix'))]"
+            },
+            "projectName": {
+              "type": "string",
+              "value": "[format('{0}-proj', parameters('namePrefix'))]"
+            },
+            "openAiEndpoint": {
+              "type": "string",
+              "value": "[format('https://{0}.openai.azure.com/', parameters('customSubDomainName'))]"
+            },
+            "foundryEndpoint": {
+              "type": "string",
+              "value": "[reference('account').endpoint]"
+            },
+            "deploymentName": {
+              "type": "string",
+              "value": "[parameters('model').deploymentName]"
+            }
+          }
+        }
+      }
+    },
+    "functions": {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "[format('functions-{0}', uniqueString('functions', deployment().name))]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "namePrefix": {
+            "value": "[variables('namePrefix')]"
+          },
+          "storageAccountName": {
+            "value": "[variables('storageAccountName')]"
+          },
+          "appInsightsConnectionString": {
+            "value": "[reference('monitoring').outputs.appInsightsConnectionString.value]"
+          },
+          "foundryAccountName": {
+            "value": "[reference('foundry').outputs.accountName.value]"
+          },
+          "openAiEndpoint": {
+            "value": "[reference('foundry').outputs.openAiEndpoint.value]"
+          },
+          "openAiDeployment": {
+            "value": "[reference('foundry').outputs.deploymentName.value]"
+          },
+          "openAiApiVersion": {
+            "value": "[parameters('openAiApiVersion')]"
+          },
+          "tags": {
+            "value": "[variables('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.44.1.10279",
+              "templateHash": "13269108768896752848"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure region for the Functions resources."
+              }
+            },
+            "namePrefix": {
+              "type": "string",
+              "metadata": {
+                "description": "Base name used to derive resource names."
+              }
+            },
+            "storageAccountName": {
+              "type": "string",
+              "metadata": {
+                "description": "Storage account name (3-24 lowercase alphanumeric)."
+              }
+            },
+            "appInsightsConnectionString": {
+              "type": "string",
+              "metadata": {
+                "description": "Application Insights connection string."
+              }
+            },
+            "foundryAccountName": {
+              "type": "string",
+              "metadata": {
+                "description": "Name of the Foundry (Cognitive Services) account to grant access to."
+              }
+            },
+            "openAiEndpoint": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure OpenAI endpoint used by the app."
+              }
+            },
+            "openAiDeployment": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure OpenAI deployment name used by the app."
+              }
+            },
+            "openAiApiVersion": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure OpenAI API version used by the app."
+              }
+            },
+            "tags": {
+              "type": "object",
+              "metadata": {
+                "description": "Tags applied to all resources."
+              }
+            }
+          },
+          "variables": {
+            "deploymentContainerName": "app-package",
+            "peSubnetName": "snet-pe",
+            "functionSubnetName": "snet-func",
+            "storagePrivateEndpoints": [
+              {
+                "group": "blob",
+                "zone": "[format('privatelink.blob.{0}', environment().suffixes.storage)]"
+              },
+              {
+                "group": "queue",
+                "zone": "[format('privatelink.queue.{0}', environment().suffixes.storage)]"
+              },
+              {
+                "group": "table",
+                "zone": "[format('privatelink.table.{0}', environment().suffixes.storage)]"
+              }
+            ],
+            "storageBlobDataOwnerRoleId": "b7e6dc6d-f1e8-4753-8033-0f276bb0955b",
+            "openAiUserRoleId": "5e0bd9bd-7b93-4f28-af87-19fc36ad61bd"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Storage/storageAccounts",
+              "apiVersion": "2023-05-01",
+              "name": "[parameters('storageAccountName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "sku": {
+                "name": "Standard_LRS"
+              },
+              "kind": "StorageV2",
+              "properties": {
+                "minimumTlsVersion": "TLS1_2",
+                "allowBlobPublicAccess": false,
+                "allowSharedKeyAccess": false,
+                "supportsHttpsTrafficOnly": true
+              }
+            },
+            {
+              "type": "Microsoft.Storage/storageAccounts/blobServices",
+              "apiVersion": "2023-05-01",
+              "name": "[format('{0}/{1}', parameters('storageAccountName'), 'default')]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+              "apiVersion": "2023-05-01",
+              "name": "[format('{0}/{1}/{2}', parameters('storageAccountName'), 'default', variables('deploymentContainerName'))]",
+              "properties": {
+                "publicAccess": "None"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts/blobServices', parameters('storageAccountName'), 'default')]"
+              ]
+            },
+            {
+              "type": "Microsoft.Network/virtualNetworks",
+              "apiVersion": "2023-11-01",
+              "name": "[format('{0}-vnet', parameters('namePrefix'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "addressSpace": {
+                  "addressPrefixes": [
+                    "10.20.0.0/16"
+                  ]
+                },
+                "subnets": [
+                  {
+                    "name": "[variables('peSubnetName')]",
+                    "properties": {
+                      "addressPrefix": "10.20.1.0/24",
+                      "privateEndpointNetworkPolicies": "Disabled"
+                    }
+                  },
+                  {
+                    "name": "[variables('functionSubnetName')]",
+                    "properties": {
+                      "addressPrefix": "10.20.2.0/24",
+                      "delegations": [
+                        {
+                          "name": "flexConsumptionDelegation",
+                          "properties": {
+                            "serviceName": "Microsoft.App/environments"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "copy": {
+                "name": "storageDnsZones",
+                "count": "[length(variables('storagePrivateEndpoints'))]"
+              },
+              "type": "Microsoft.Network/privateDnsZones",
+              "apiVersion": "2020-06-01",
+              "name": "[variables('storagePrivateEndpoints')[copyIndex()].zone]",
+              "location": "global",
+              "tags": "[parameters('tags')]"
+            },
+            {
+              "copy": {
+                "name": "storageDnsLinks",
+                "count": "[length(variables('storagePrivateEndpoints'))]"
+              },
+              "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+              "apiVersion": "2020-06-01",
+              "name": "[format('{0}/{1}', variables('storagePrivateEndpoints')[copyIndex()].zone, format('link-to-{0}-vnet', parameters('namePrefix')))]",
+              "location": "global",
+              "properties": {
+                "registrationEnabled": false,
+                "virtualNetwork": {
+                  "id": "[resourceId('Microsoft.Network/virtualNetworks', format('{0}-vnet', parameters('namePrefix')))]"
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/privateDnsZones', variables('storagePrivateEndpoints')[copyIndex()].zone)]",
+                "[resourceId('Microsoft.Network/virtualNetworks', format('{0}-vnet', parameters('namePrefix')))]"
+              ]
+            },
+            {
+              "copy": {
+                "name": "storagePes",
+                "count": "[length(variables('storagePrivateEndpoints'))]"
+              },
+              "type": "Microsoft.Network/privateEndpoints",
+              "apiVersion": "2023-11-01",
+              "name": "[format('{0}-{1}-pe', parameters('storageAccountName'), variables('storagePrivateEndpoints')[copyIndex()].group)]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "subnet": {
+                  "id": "[format('{0}/subnets/{1}', resourceId('Microsoft.Network/virtualNetworks', format('{0}-vnet', parameters('namePrefix'))), variables('peSubnetName'))]"
+                },
+                "privateLinkServiceConnections": [
+                  {
+                    "name": "[format('{0}-connection', variables('storagePrivateEndpoints')[copyIndex()].group)]",
+                    "properties": {
+                      "privateLinkServiceId": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
+                      "groupIds": [
+                        "[variables('storagePrivateEndpoints')[copyIndex()].group]"
+                      ]
+                    }
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks', format('{0}-vnet', parameters('namePrefix')))]"
+              ]
+            },
+            {
+              "copy": {
+                "name": "storagePeDnsGroups",
+                "count": "[length(variables('storagePrivateEndpoints'))]"
+              },
+              "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+              "apiVersion": "2023-11-01",
+              "name": "[format('{0}/{1}', format('{0}-{1}-pe', parameters('storageAccountName'), variables('storagePrivateEndpoints')[copyIndex()].group), 'default')]",
+              "properties": {
+                "privateDnsZoneConfigs": [
+                  {
+                    "name": "[replace(variables('storagePrivateEndpoints')[copyIndex()].zone, '.', '-')]",
+                    "properties": {
+                      "privateDnsZoneId": "[resourceId('Microsoft.Network/privateDnsZones', variables('storagePrivateEndpoints')[copyIndex()].zone)]"
+                    }
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/privateDnsZones', variables('storagePrivateEndpoints')[copyIndex()].zone)]",
+                "[resourceId('Microsoft.Network/privateEndpoints', format('{0}-{1}-pe', parameters('storageAccountName'), variables('storagePrivateEndpoints')[copyIndex()].group))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Web/serverfarms",
+              "apiVersion": "2023-12-01",
+              "name": "[format('{0}-flex', parameters('namePrefix'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "kind": "functionapp",
+              "sku": {
+                "name": "FC1",
+                "tier": "FlexConsumption"
+              },
+              "properties": {
+                "reserved": true
+              }
+            },
+            {
+              "type": "Microsoft.Web/sites",
+              "apiVersion": "2023-12-01",
+              "name": "[format('{0}-func', parameters('namePrefix'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "kind": "functionapp,linux",
+              "identity": {
+                "type": "SystemAssigned"
+              },
+              "properties": {
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', format('{0}-flex', parameters('namePrefix')))]",
+                "httpsOnly": true,
+                "virtualNetworkSubnetId": "[format('{0}/subnets/{1}', resourceId('Microsoft.Network/virtualNetworks', format('{0}-vnet', parameters('namePrefix'))), variables('functionSubnetName'))]",
+                "functionAppConfig": {
+                  "deployment": {
+                    "storage": {
+                      "type": "blobContainer",
+                      "value": "[format('{0}{1}', reference(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2023-05-01').primaryEndpoints.blob, variables('deploymentContainerName'))]",
+                      "authentication": {
+                        "type": "SystemAssignedIdentity"
+                      }
+                    }
+                  },
+                  "scaleAndConcurrency": {
+                    "maximumInstanceCount": 40,
+                    "instanceMemoryMB": 2048
+                  },
+                  "runtime": {
+                    "name": "node",
+                    "version": "20"
+                  }
+                },
+                "siteConfig": {
+                  "vnetRouteAllEnabled": true,
+                  "cors": {
+                    "allowedOrigins": [
+                      "*"
+                    ]
+                  },
+                  "appSettings": [
+                    {
+                      "name": "AzureWebJobsStorage__accountName",
+                      "value": "[parameters('storageAccountName')]"
+                    },
+                    {
+                      "name": "AzureWebJobsStorage__blobServiceUri",
+                      "value": "[reference(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2023-05-01').primaryEndpoints.blob]"
+                    },
+                    {
+                      "name": "AzureWebJobsStorage__queueServiceUri",
+                      "value": "[reference(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2023-05-01').primaryEndpoints.queue]"
+                    },
+                    {
+                      "name": "AzureWebJobsStorage__tableServiceUri",
+                      "value": "[reference(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2023-05-01').primaryEndpoints.table]"
+                    },
+                    {
+                      "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+                      "value": "[parameters('appInsightsConnectionString')]"
+                    },
+                    {
+                      "name": "AZURE_OPENAI_ENDPOINT",
+                      "value": "[parameters('openAiEndpoint')]"
+                    },
+                    {
+                      "name": "AZURE_OPENAI_DEPLOYMENT",
+                      "value": "[parameters('openAiDeployment')]"
+                    },
+                    {
+                      "name": "AZURE_OPENAI_API_VERSION",
+                      "value": "[parameters('openAiApiVersion')]"
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', format('{0}-flex', parameters('namePrefix')))]",
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
+                "storageDnsLinks",
+                "storagePeDnsGroups",
+                "[resourceId('Microsoft.Network/virtualNetworks', format('{0}-vnet', parameters('namePrefix')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "scope": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
+              "name": "[guid(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), resourceId('Microsoft.Web/sites', format('{0}-func', parameters('namePrefix'))), variables('storageBlobDataOwnerRoleId'))]",
+              "properties": {
+                "principalId": "[reference(resourceId('Microsoft.Web/sites', format('{0}-func', parameters('namePrefix'))), '2023-12-01', 'full').identity.principalId]",
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('storageBlobDataOwnerRoleId'))]",
+                "principalType": "ServicePrincipal"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', format('{0}-func', parameters('namePrefix')))]",
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "scope": "[resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName'))]",
+              "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), resourceId('Microsoft.Web/sites', format('{0}-func', parameters('namePrefix'))), variables('openAiUserRoleId'))]",
+              "properties": {
+                "principalId": "[reference(resourceId('Microsoft.Web/sites', format('{0}-func', parameters('namePrefix'))), '2023-12-01', 'full').identity.principalId]",
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('openAiUserRoleId'))]",
+                "principalType": "ServicePrincipal"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', format('{0}-func', parameters('namePrefix')))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "functionAppName": {
+              "type": "string",
+              "value": "[format('{0}-func', parameters('namePrefix'))]"
+            },
+            "functionAppHostName": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Web/sites', format('{0}-func', parameters('namePrefix'))), '2023-12-01').defaultHostName]"
+            },
+            "functionAppUrl": {
+              "type": "string",
+              "value": "[format('https://{0}', reference(resourceId('Microsoft.Web/sites', format('{0}-func', parameters('namePrefix'))), '2023-12-01').defaultHostName)]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "foundry",
+        "monitoring"
+      ]
+    },
+    "staticWebApp": {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "[format('staticWebApp-{0}', uniqueString('staticWebApp', deployment().name))]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('staticWebAppLocation')]"
+          },
+          "namePrefix": {
+            "value": "[variables('namePrefix')]"
+          },
+          "tags": {
+            "value": "[variables('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.44.1.10279",
+              "templateHash": "918318114409863341"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure region for the Static Web App (must be a SWA-supported region)."
+              }
+            },
+            "namePrefix": {
+              "type": "string",
+              "metadata": {
+                "description": "Base name used to derive resource names."
+              }
+            },
+            "tags": {
+              "type": "object",
+              "metadata": {
+                "description": "Tags applied to all resources."
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Web/staticSites",
+              "apiVersion": "2023-12-01",
+              "name": "[format('{0}-web', parameters('namePrefix'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "sku": {
+                "name": "Free",
+                "tier": "Free"
+              },
+              "properties": {
+                "allowConfigFileUpdates": true
+              }
+            }
+          ],
+          "outputs": {
+            "staticWebAppName": {
+              "type": "string",
+              "value": "[format('{0}-web', parameters('namePrefix'))]"
+            },
+            "staticWebAppDefaultHostName": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Web/staticSites', format('{0}-web', parameters('namePrefix'))), '2023-12-01').defaultHostname]"
+            }
+          }
+        }
+      }
+    }
+  },
+  "outputs": {
+    "foundryAccountName": {
+      "type": "string",
+      "value": "[reference('foundry').outputs.accountName.value]"
+    },
+    "foundryProjectName": {
+      "type": "string",
+      "value": "[reference('foundry').outputs.projectName.value]"
+    },
+    "openAiEndpoint": {
+      "type": "string",
+      "value": "[reference('foundry').outputs.openAiEndpoint.value]"
+    },
+    "openAiDeployment": {
+      "type": "string",
+      "value": "[reference('foundry').outputs.deploymentName.value]"
+    },
+    "openAiApiVersion": {
+      "type": "string",
+      "value": "[parameters('openAiApiVersion')]"
+    },
+    "functionAppName": {
+      "type": "string",
+      "value": "[reference('functions').outputs.functionAppName.value]"
+    },
+    "functionAppUrl": {
+      "type": "string",
+      "value": "[reference('functions').outputs.functionAppUrl.value]"
+    },
+    "staticWebAppName": {
+      "type": "string",
+      "value": "[reference('staticWebApp').outputs.staticWebAppName.value]"
+    },
+    "staticWebAppHostName": {
+      "type": "string",
+      "value": "[reference('staticWebApp').outputs.staticWebAppDefaultHostName.value]"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+
+added 135 packages, and audited 136 packages in 19s
+
+33 packages are looking for funding
+  run `npm fund` for details
+
+5 vulnerabilities (3 moderate, 1 high, 1 critical)
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+> mortgage-agent-backend@1.0.0 build
+> tsc
+
+
+removed 52 packages, and audited 84 packages in 3s
+
+17 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+WARNING: Getting scm site credentials for zip deployment
+WARNING: Starting zip deployment. This operation can take a while to complete ...
+WARNING: Deployment endpoint responded with status code 202 for deployment id "df902d13-deb0-469e-b0f4-d59ca2c49d5e"
+WARNING: Waiting for sync triggers...
+WARNING: Checking the health of the function app
+npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead

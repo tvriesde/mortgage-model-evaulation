@@ -1,0 +1,14 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "AGENT_MOCK": "true",
+    "AZURE_OPENAI_ENDPOINT": "https://<your-foundry-account>.openai.azure.com/",
+    "AZURE_OPENAI_DEPLOYMENT": "gpt-4.1",
+    "AZURE_OPENAI_API_VERSION": "2024-10-21"
+  },
+  "Host": {
+    "CORS": "*"
+  }
+}

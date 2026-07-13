@@ -1,0 +1,35 @@
+# Node
+node_modules/
+dist/
+*.tsbuildinfo
+coverage/
+playwright-report/
+test-results/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+evals/results/
+
+# Azure Functions
+backend/local.settings.json
+bin/
+obj/
+
+# Env & secrets
+.env
+.env.*
+!.env.example
+*.local.json
+local.settings.json
+
+# Build artifacts
+*.zip
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/*.log

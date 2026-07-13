@@ -1,0 +1,269 @@
+:root {
+  --coral: #ff6b6b;
+  --coral-dark: #e85555;
+  --mint: #2ec4b6;
+  --ink: #22223b;
+  --muted: #6c6f93;
+  --bg: #fff7f2;
+  --card: #ffffff;
+  --ring: rgba(255, 107, 107, 0.35);
+  --radius: 18px;
+  font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(1200px 600px at 80% -10%, #ffe3d3, transparent), var(--bg);
+  color: var(--ink);
+}
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.hero {
+  text-align: center;
+  padding: 48px 20px 8px;
+}
+
+.hero__logo {
+  display: inline-block;
+  font-weight: 700;
+  font-size: 1.1rem;
+  background: #fff;
+  padding: 8px 16px;
+  border-radius: 999px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+}
+
+.hero h1 {
+  font-size: 2.4rem;
+  margin: 18px 0 6px;
+}
+
+.hero p {
+  color: var(--muted);
+  margin: 0;
+}
+
+.container {
+  width: min(560px, 92vw);
+  margin: 24px auto 48px;
+  flex: 1;
+}
+
+.stepper {
+  display: flex;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px;
+}
+
+.stepper__item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.stepper__dot {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #ffe3d3;
+  color: var(--coral-dark);
+  font-weight: 700;
+}
+
+.stepper__item--active .stepper__dot {
+  background: var(--coral);
+  color: #fff;
+}
+
+.stepper__item--done .stepper__dot {
+  background: var(--mint);
+  color: #fff;
+}
+
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 28px;
+  box-shadow: 0 18px 50px rgba(34, 34, 59, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.card h2 {
+  margin: 0;
+}
+
+.muted {
+  color: var(--muted);
+  margin: 0;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.field > span,
+.field > legend {
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+input,
+select {
+  padding: 12px 14px;
+  border: 2px solid #efe6df;
+  border-radius: 12px;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+input:focus,
+select:focus {
+  border-color: var(--coral);
+  box-shadow: 0 0 0 4px var(--ring);
+}
+
+.chips {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px;
+  border: 2px solid #efe6df;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 0.92rem;
+}
+
+.chip--selected {
+  border-color: var(--coral);
+  background: #fff1ec;
+}
+
+.chip input {
+  display: none;
+}
+
+.btn {
+  border: 0;
+  border-radius: 12px;
+  padding: 14px 18px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn--primary {
+  background: var(--coral);
+  color: #fff;
+}
+
+.btn--primary:hover {
+  background: var(--coral-dark);
+}
+
+.btn--primary:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--muted);
+  border: 2px solid #efe6df;
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.error {
+  color: var(--coral-dark);
+  font-size: 0.82rem;
+}
+
+.banner {
+  padding: 12px 16px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+
+.banner--error {
+  background: #ffe0e0;
+  color: #a12b2b;
+}
+
+.result {
+  text-align: center;
+  align-items: center;
+}
+
+.result__emoji {
+  font-size: 3rem;
+}
+
+.result__badge {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 999px;
+  margin: 0;
+}
+
+.result--approved .result__badge {
+  background: #d9f7f2;
+  color: #157f74;
+}
+
+.result--review .result__badge {
+  background: #fff3d6;
+  color: #9a6b00;
+}
+
+.result--declined .result__badge {
+  background: #ffe0e0;
+  color: #a12b2b;
+}
+
+.result__reason {
+  color: var(--muted);
+  max-width: 40ch;
+}
+
+.footer {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.8rem;
+  padding: 16px;
+}

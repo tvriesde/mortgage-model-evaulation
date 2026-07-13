@@ -1,0 +1,95 @@
+Wrote 20 rows to C:\code\rdw-model-evaluation-module\evals\data\mortgage_dataset.jsonl
+=== Mortgage agent regression evaluation ===
+Mode:        LIVE model
+Endpoint:    https://mortgage-agent-dev-aqm3faq7wi2rm.openai.azure.com/
+Deployment:  gpt-4.1
+Dataset:     C:\code\rdw-model-evaluation-module\evals\data\mortgage_dataset.jsonl
+Threshold:   90% accuracy, <= 0 severe mismatch(es)
+
+2026-07-10 14:30:07 +0200   71660 execution.bulk     INFO     Finished 1 / 20 lines.
+2026-07-10 14:30:07 +0200   71660 execution.bulk     INFO     Average execution time for completed lines: 7.26 seconds. Estimated time for incomplete lines: 137.94 seconds.
+2026-07-10 14:30:07 +0200   71660 execution.bulk     INFO     Finished 3 / 20 lines.
+2026-07-10 14:30:07 +0200   71660 execution.bulk     INFO     Average execution time for completed lines: 2.44 seconds. Estimated time for incomplete lines: 41.48 seconds.
+2026-07-10 14:30:07 +0200   71660 execution.bulk     INFO     Finished 4 / 20 lines.
+2026-07-10 14:30:07 +0200   71660 execution.bulk     INFO     Average execution time for completed lines: 1.84 seconds. Estimated time for incomplete lines: 29.44 seconds.
+2026-07-10 14:30:07 +0200   71660 execution.bulk     INFO     Finished 5 / 20 lines.
+2026-07-10 14:30:07 +0200   71660 execution.bulk     INFO     Average execution time for completed lines: 1.47 seconds. Estimated time for incomplete lines: 22.05 seconds.
+2026-07-10 14:30:07 +0200   71660 execution.bulk     INFO     Finished 6 / 20 lines.
+2026-07-10 14:30:07 +0200   71660 execution.bulk     INFO     Average execution time for completed lines: 1.23 seconds. Estimated time for incomplete lines: 17.22 seconds.
+2026-07-10 14:30:07 +0200   71660 execution.bulk     INFO     Finished 8 / 20 lines.
+2026-07-10 14:30:07 +0200   71660 execution.bulk     INFO     Average execution time for completed lines: 0.92 seconds. Estimated time for incomplete lines: 11.04 seconds.
+2026-07-10 14:30:07 +0200   71660 execution.bulk     INFO     Finished 9 / 20 lines.
+2026-07-10 14:30:07 +0200   71660 execution.bulk     INFO     Average execution time for completed lines: 0.83 seconds. Estimated time for incomplete lines: 9.13 seconds.
+2026-07-10 14:30:08 +0200   71660 execution.bulk     INFO     Finished 10 / 20 lines.
+2026-07-10 14:30:08 +0200   71660 execution.bulk     INFO     Average execution time for completed lines: 0.83 seconds. Estimated time for incomplete lines: 8.3 seconds.
+2026-07-10 14:30:08 +0200   71660 execution.bulk     INFO     Finished 11 / 20 lines.
+2026-07-10 14:30:08 +0200   71660 execution.bulk     INFO     Average execution time for completed lines: 0.76 seconds. Estimated time for incomplete lines: 6.84 seconds.
+2026-07-10 14:30:08 +0200   71660 execution.bulk     INFO     Finished 12 / 20 lines.
+2026-07-10 14:30:08 +0200   71660 execution.bulk     INFO     Average execution time for completed lines: 0.7 seconds. Estimated time for incomplete lines: 5.6 seconds.
+2026-07-10 14:30:08 +0200   71660 execution.bulk     INFO     Finished 13 / 20 lines.
+2026-07-10 14:30:08 +0200   71660 execution.bulk     INFO     Average execution time for completed lines: 0.65 seconds. Estimated time for incomplete lines: 4.55 seconds.
+2026-07-10 14:30:08 +0200   71660 execution.bulk     INFO     Finished 15 / 20 lines.
+2026-07-10 14:30:08 +0200   71660 execution.bulk     INFO     Average execution time for completed lines: 0.57 seconds. Estimated time for incomplete lines: 2.85 seconds.
+2026-07-10 14:30:08 +0200   71660 execution.bulk     INFO     Finished 16 / 20 lines.
+2026-07-10 14:30:08 +0200   71660 execution.bulk     INFO     Average execution time for completed lines: 0.54 seconds. Estimated time for incomplete lines: 2.16 seconds.
+2026-07-10 14:30:08 +0200   71660 execution.bulk     INFO     Finished 17 / 20 lines.
+2026-07-10 14:30:08 +0200   71660 execution.bulk     INFO     Average execution time for completed lines: 0.51 seconds. Estimated time for incomplete lines: 1.53 seconds.
+2026-07-10 14:30:08 +0200   71660 execution.bulk     INFO     Finished 18 / 20 lines.
+2026-07-10 14:30:08 +0200   71660 execution.bulk     INFO     Average execution time for completed lines: 0.5 seconds. Estimated time for incomplete lines: 1.0 seconds.
+2026-07-10 14:30:09 +0200   71660 execution.bulk     INFO     Finished 19 / 20 lines.
+2026-07-10 14:30:09 +0200   71660 execution.bulk     INFO     Average execution time for completed lines: 0.49 seconds. Estimated time for incomplete lines: 0.49 seconds.
+2026-07-10 14:30:09 +0200   71660 execution.bulk     INFO     Finished 20 / 20 lines.
+2026-07-10 14:30:09 +0200   71660 execution.bulk     INFO     Average execution time for completed lines: 0.47 seconds. Estimated time for incomplete lines: 0.0 seconds.
+======= Run Summary =======
+
+Run name: "evaluate_request_20260710_122959_862685"
+Run status: "Completed"
+Start time: "2026-07-10 12:29:59.862685+00:00"
+Duration: "0:00:10.080199"
+
+2026-07-10 14:30:09 +0200   24724 execution.bulk     INFO     Finished 9 / 20 lines.
+2026-07-10 14:30:09 +0200   24724 execution.bulk     INFO     Average execution time for completed lines: 0.0 seconds. Estimated time for incomplete lines: 0.0 seconds.
+2026-07-10 14:30:09 +0200   24724 execution.bulk     INFO     Finished 19 / 20 lines.
+2026-07-10 14:30:10 +0200   24724 execution.bulk     INFO     Average execution time for completed lines: 0.0 seconds. Estimated time for incomplete lines: 0.0 seconds.
+2026-07-10 14:30:10 +0200   24724 execution.bulk     INFO     Finished 20 / 20 lines.
+2026-07-10 14:30:10 +0200   24724 execution.bulk     INFO     Average execution time for completed lines: 0.0 seconds. Estimated time for incomplete lines: 0.0 seconds.
+Aggregated metrics for evaluator is not a dictionary will not be logged as metrics
+======= Run Summary =======
+
+Run name: "verdict_match_20260710_123009_989331"
+Run status: "Completed"
+Start time: "2026-07-10 12:30:09.989331+00:00"
+Duration: "0:00:01.003851"
+
+======= Combined Run Summary (Per Evaluator) =======
+
+{
+    "verdict_match": {
+        "status": "Completed",
+        "duration": "0:00:01.003851",
+        "completed_lines": 20,
+        "failed_lines": 0,
+        "log_path": null,
+        "per_line_errors": {},
+        "error_message": null,
+        "error_code": null
+    }
+}
+
+====================================================
+
+Cases:      20
+Correct:    15
+Accuracy:   75.0%
+Severe:     3 (approved<->declined flips)
+
+Mismatches:
+  !! expected=declined     actual=approved     {"incomeSource": "permanent", "grossAnnualIncome": 30000, "propertyValue": 400000, "requestedLoanAmount": 300000, "age": 33, "gender": "male", "monthlyDebts": 0}
+  !! expected=declined     actual=approved     {"incomeSource": "permanent", "grossAnnualIncome": 25000, "propertyValue": 350000, "requestedLoanAmount": 250000, "age": 29, "gender": "female", "monthlyDebts": 0}
+  !! expected=declined     actual=approved     {"incomeSource": "permanent", "grossAnnualIncome": 40000, "propertyValue": 500000, "requestedLoanAmount": 300000, "age": 31, "gender": "female", "monthlyDebts": 400}
+     expected=needs_review actual=approved     {"incomeSource": "permanent", "grossAnnualIncome": 50000, "propertyValue": 300000, "requestedLoanAmount": 220000, "age": 32, "gender": "male", "monthlyDebts": 0}
+     expected=declined     actual=needs_review {"incomeSource": "self_employed", "grossAnnualIncome": 40000, "propertyValue": 500000, "requestedLoanAmount": 300000, "age": 37, "gender": "female", "monthlyDebts": 0}
+
+Results written to C:\code\rdw-model-evaluation-module\evals\results\eval-20260710T123011Z.json
+
+GATE: FAIL
